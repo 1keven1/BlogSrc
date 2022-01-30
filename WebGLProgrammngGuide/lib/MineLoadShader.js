@@ -23,3 +23,26 @@ function OnLoadShader(gl, fileString, type) {
         start(gl);
     }
 }
+
+function readShaderFile(gl, vFile, fFile, material){
+    var vRequest = new XMLHttpRequest();
+    var fRequest = new XMLHttpRequest();
+
+    vRequest.onreadystatechange = function () {
+        if (vRequest.readyState === 4 && vRequest.status !== 404) {
+            material.VSHADER_SOURCE = vRequest.responseText;
+            if(material.VSHADER_SOURCE && material.FSHADER_SOURCE) shaderReadOver(gl, material);
+        }
+    }
+    fRequest.onreadystatechange = function () {
+        if (fRequest.readyState === 4 && fRequest.status !== 404) {
+            material.FSHADER_SOURCE = fRequest.responseText;
+            if(material.VSHADER_SOURCE && material.FSHADER_SOURCE) shaderReadOver(gl, material);
+        }
+    }
+
+    vRequest.open('GET', vFile, true);
+    vRequest.send();
+    fRequest.open('GET', fFile, true);
+    fRequest.send();
+}
