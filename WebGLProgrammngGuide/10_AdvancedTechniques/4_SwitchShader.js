@@ -79,7 +79,7 @@ function start(gl)
     let pathName = window.document.location.pathname;
     console.log(pathName);
 
-    let texture0 = initTexture(gl, '../../res/image/test.jpg', gl.TEXTURE0, gl.TEXTURE_2D);
+    let texture0 = initTexture(gl, '../../res/Image/test.jpg', gl.TEXTURE0, gl.TEXTURE_2D);
     if (!texture0)
     {
         console.log('Failed to intialize the texture.');
