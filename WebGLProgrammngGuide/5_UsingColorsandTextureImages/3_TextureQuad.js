@@ -93,7 +93,7 @@ function initAndLoadTexture(gl, n) {
     image.onload = function () {
         loadTexture(gl, n, texture, u_Sampler, image);
     }
-    image.src = '../resource/test.jpg';
+    image.src = '../../res/Image/test.jpg';
 
     return true;
 }

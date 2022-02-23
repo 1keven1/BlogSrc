@@ -76,9 +76,7 @@ function start(gl)
         return;
     }
 
-    let pathName = window.document.location.pathname;
-    console.log(pathName);
-
+    // 读取贴图并存到Texture unit0
     let texture0 = initTexture(gl, '../../res/Image/test.jpg', gl.TEXTURE0, gl.TEXTURE_2D);
     if (!texture0)
     {

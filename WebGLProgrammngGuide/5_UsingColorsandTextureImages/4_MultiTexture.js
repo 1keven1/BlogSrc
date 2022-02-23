@@ -99,8 +99,8 @@ function initAndLoadTexture(gl, n) {
     imageMask.onload = function () {
         loadTexture(gl, n, textureMask, u_Sampler_Mask, imageMask, 1);
     }
-    imageBase.src = '../resource/test.jpg';
-    imageMask.src = '../resource/Drop.png';
+    imageBase.src = '../../res/Image/test.jpg';
+    imageMask.src = '../../res/Image/Drop.png';
     return true;
 }
 

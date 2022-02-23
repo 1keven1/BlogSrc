@@ -1,4 +1,9 @@
-
+/**
+ * 已弃用
+ * @param {*} gl 
+ * @param {string} fileName 
+ * @param {*} shader 
+ */
 // Load shader from file
 function loadShaderFile(gl, fileName, shader) {
     var request = new XMLHttpRequest();
@@ -24,6 +29,13 @@ function OnLoadShader(gl, fileString, type) {
     }
 }
 
+/**
+ * 加载完后调用 shaderReadOver(gl, material)事件
+ * @param {*} gl 
+ * @param {string} vFile 
+ * @param {string} fFile 
+ * @param {*} material 
+ */
 function readShaderFile(gl, vFile, fFile, material){
     var vRequest = new XMLHttpRequest();
     var fRequest = new XMLHttpRequest();
