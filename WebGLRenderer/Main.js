@@ -32,16 +32,21 @@ renderer.customBeginPlay = () =>
     texMaterial.setUniformVector3f('u_AmbientColor', 0.2, 0.2, 0.2);
     texMaterial.setTexture('u_Tex', 0);
 
-    document.onmousedown = () =>
+    let func1 = function ()
     {
         meshCube.material = diffuseMaterial;
         floor.material = texMaterial;
     }
-    document.onmouseup = () =>
+    let func2 = function ()
     {
         meshCube.material = texMaterial;
         floor.material = diffuseMaterial;
     }
+
+    document.addEventListener('mousedown', func1);
+    document.addEventListener('mouseup', func2);
+    document.addEventListener('touchstart', func1);
+    document.addEventListener('touchend', func2);
 }
 
 renderer.customTick = (deltaSecond) =>
