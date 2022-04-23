@@ -32,9 +32,11 @@ class WebGLRenderer
     start()
     {
         this.codeEditor.customJS = this.customJS;
-        this.codeEditor.refresh();
 
         eval(this.customJS);
+
+        this.codeEditor.refresh();
+        
         this.bulidScene(this.scene);
         // 加载场景
         this.scene.loadOver = this.startRenderLoop.bind(this);
@@ -52,14 +54,15 @@ class WebGLRenderer
         this.customBeginPlay();
 
         console.log('开始渲染循环');
-        let lastTime = 0;
-        let deltaSecond = 0;
+        this.lastTime = 0;
         let renderLoop = (timeStamp) =>
         {
-            deltaSecond = (timeStamp - lastTime) * 0.01;
-            lastTime = timeStamp;
+            let deltaSecond = (timeStamp - this.lastTime) * 0.01;
+            this.lastTime = timeStamp;
 
+            if (deltaSecond > 1) deltaSecond = 0.01;
             this.customTick(deltaSecond);
+
             this.scene.calculateMatrices();
             this.scene.render();
             this.frameRequest = requestAnimationFrame(renderLoop);
@@ -92,6 +95,7 @@ class WebGLRenderer
 
     clear()
     {
+        this.lastTime = 0;
         this.scene.clear();
     }
 }

@@ -2,6 +2,7 @@
 
 let customJS;
 let request = new XMLHttpRequest();
+let renderer;
 
 request.onreadystatechange = () =>
 {
@@ -10,7 +11,7 @@ request.onreadystatechange = () =>
         customJS = request.responseText;
         // console.log(customJS);
 
-        let renderer = new WebGLRenderer();
+        renderer = new WebGLRenderer();
         renderer.customJS = customJS;
 
         renderer.start();

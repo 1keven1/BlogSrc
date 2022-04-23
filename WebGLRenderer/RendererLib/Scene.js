@@ -59,14 +59,14 @@ class Scene
 
     modelLoadOver()
     {
-        console.log('mesh load over');
+        console.log('model load over');
         this.modelLoadedNum++;
         this.checkIfLoadOver();
     }
 
     materialLoadOver()
     {
-        console.log('mesh load over');
+        console.log('material load over');
         this.materialLoadedNum++;
         this.checkIfLoadOver();
     }
@@ -226,6 +226,8 @@ class Scene
 
     clear()
     {
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
         this.modelList = [];
         this.materialList = [];
         this.textureList = [];
