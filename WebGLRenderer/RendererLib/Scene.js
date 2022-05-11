@@ -91,15 +91,16 @@ class Scene
             this.textureLodedNum === this.textureList.length &&
             this.lightLoadedNum === this.lightList.length)
         {
-            this.meshList.forEach((mesh, index, arr) =>
+            for (let i = 0; i < this.meshList.length; i++)
             {
-                if (!mesh.model.bLoaded || !mesh.material.bLoaded)
+                if (!this.meshList[i].model.bLoaded || !this.meshList[i].material.bLoaded)
                 {
-                    if (!mesh.model.bLoaded) console.warn(mesh.model.objFile + '：没有加载完整');
-                    if (!mesh.material.bLoaded) console.warn(mesh.material.baseShader.vShaderFile + '：没有加载');
-                    this.meshList.splice(index, 1);
+                    if (!this.meshList[i].model.bLoaded) console.warn(this.meshList[i].model.objFile + '：没有加载完整');
+                    if (!this.meshList[i].material.bLoaded) console.warn(this.meshList[i].material.baseShader.vShaderFile + '：没有加载');
+                    this.meshList.splice(i, 1);
+                    i--;
                 }
-            })
+            }
             this.loadOver();
         }
     }
@@ -120,7 +121,7 @@ class Scene
         this.camera.bulidVPMatrix();
     }
 
-    render()
+    render(clearColor)
     {
         // 绘制灯光ShadowMap
         this.lightList.forEach((light, lightIndex, arr) =>
@@ -139,7 +140,7 @@ class Scene
         // 绘制到屏幕
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, width, height);
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.clearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         this.lightList.forEach((light, lightIndex, arr) =>

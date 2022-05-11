@@ -17,7 +17,7 @@ uniform sampler2D u_ShadowMap;
 uniform vec3 u_AmbientColor;
 uniform sampler2D u_Texture;
 
-varying vec4 v_TexCoord;
+varying vec2 v_TexCoord;
 varying vec3 v_WorldNormal;
 varying vec4 v_PositionFromLight;
 
@@ -27,8 +27,8 @@ float unpackDepth(const in vec4 rgbaDepth) {
     return depth;
 }
 
+// 获取阴影函数
 float getShadow() {
-    // 阴影
     vec3 shadowCoord = (v_PositionFromLight.xyz / v_PositionFromLight.w) / 2.0 + 0.5;
     vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy);
     float depth = unpackDepth(rgbaDepth);
@@ -36,6 +36,7 @@ float getShadow() {
     return shadow;
 }
 
+// Main函数在这里
 void main() {
     vec3 albedo = texture2D(u_Texture, v_TexCoord.xy).xyz;
 

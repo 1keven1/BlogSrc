@@ -1,42 +1,41 @@
 'use strict';
 const canvas = document.querySelector('canvas');
-if (!canvas)
-{
+if (!canvas) {
     console.console.error('获取Canvas失败');
 }
 const gl = getWebGLContext(canvas);
-if (!gl)
-{
+if (!gl) {
     console.error("Get WebGL Render Context Failed");
 }
-let width = canvas.width;
-let height = canvas.height;
 
-class WebGLRenderer
-{
+let width = canvas.clientWidth;
+let height = canvas.clientHeight;
+
+class WebGLRenderer {
     /**
      * 
      * @param {Scene} scene 
      * @param {Material} editableMat
      */
-    constructor()
-    {
+    constructor() {
         this.scene = new Scene([], [], [], [], [], null);
         this.customJS = null;
         this.frameRequest = null;
         this.codeEditor = new CodeEditor(this);
+        this.clearColor = [0.0, 0.0, 0.0, 1.0];
 
-        gl.clearColor(0, 0, 0, 1);
+        this.codeEditor.changeSize(window.innerWidth * this.codeEditor.sizePercent);
+
+        window.onresize = () => {
+            this.codeEditor.changeSize(window.innerWidth * this.codeEditor.sizePercent);
+        }
     }
 
-    start()
-    {
+    start() {
         this.codeEditor.customJS = this.customJS;
 
         eval(this.customJS);
 
-        this.codeEditor.refresh();
-        
         this.bulidScene(this.scene);
         // 加载场景
         this.scene.loadOver = this.startRenderLoop.bind(this);
@@ -47,16 +46,16 @@ class WebGLRenderer
      * 
      * @param {Scene} scene 
      */
-    bulidScene(scene) {}
+    bulidScene(scene) { }
 
-    startRenderLoop()
-    {
+    startRenderLoop() {
+        this.codeEditor.refresh();
+
         this.customBeginPlay();
 
         console.log('开始渲染循环');
         this.lastTime = 0;
-        let renderLoop = (timeStamp) =>
-        {
+        let renderLoop = (timeStamp) => {
             let deltaSecond = (timeStamp - this.lastTime) * 0.01;
             this.lastTime = timeStamp;
 
@@ -64,14 +63,13 @@ class WebGLRenderer
             this.customTick(deltaSecond);
 
             this.scene.calculateMatrices();
-            this.scene.render();
+            this.scene.render(this.clearColor);
             this.frameRequest = requestAnimationFrame(renderLoop);
         }
         renderLoop(0);
     }
 
-    customBeginPlay()
-    {
+    customBeginPlay() {
         console.warn('未重写Custom Begin Play');
     }
 
@@ -79,58 +77,238 @@ class WebGLRenderer
      * 
      * @param {Number} deltaSecond 
      */
-    customTick(deltaSecond)
-    {
+    customTick(deltaSecond) {
         console.warn('未重写Custom Tick');
     }
 
-    stop()
-    {
-        if (this.frameRequest)
-        {
+    stop() {
+        if (this.frameRequest) {
             cancelAnimationFrame(this.frameRequest);
             this.frameRequest = null;
         }
     }
 
-    clear()
-    {
+    clear() {
         this.lastTime = 0;
         this.scene.clear();
     }
+
+    initWebGL() {
+        gl = getWebGLContext(canvas);
+        if (!gl) {
+            console.error("Get WebGL Render Context Failed");
+        }
+    }
 }
 
-class CodeEditor
-{
+let CODE_TYPE = {
+    JS: Symbol(0),
+    VSHADER: Symbol(1),
+    FSAHDER: Symbol(2)
+}
+Object.freeze(CODE_TYPE);
+
+class CodeEditor {
     /**
      * 
      * @param {WebGLRenderer} renderer 
      */
-    constructor(renderer)
-    {
+    constructor(renderer) {
         this.renderer = renderer;
 
         this.customJS = null;
+        this.editableShaderList = [];
+        this.tabs = [];
+        this.panels = [];
+        this.sizePercent = 0.4;
 
-        this.editP = document.querySelector('textarea');
-        this.applyButton = document.querySelector('.apply-code');
+        this.codeEditor = document.querySelector('.code-editor');
+        this.toogleCode = this.codeEditor.querySelector('.toggle-code');
+        this.tabContainer = this.codeEditor.querySelector('.tabs');
+        this.panelContainer = this.codeEditor.querySelector('.panels');
+        this.applyButton = this.codeEditor.querySelector('.apply-code');
+        this.resizeHandler = this.codeEditor.querySelector('.resize-handler');
+        this.choise = -1;
+        this.visability = false;
 
-        this.applyButton.addEventListener('click', () =>
-        {
-            this.applyCode();
+        this.implementEvents();
+    }
+
+    implementEvents() {
+        // 切换代码显示
+        this.toogleCode.addEventListener('click', () => {
+            this.setVisability(!this.visability);
+        })
+
+        // 确定按钮
+        this.applyButton.addEventListener('click', () => {
+            let tab = this.tabs[this.choise];
+            let code = this.panels[this.choise].textContent;
+            switch (tab.type) {
+                case CODE_TYPE.JS:
+                    this.applyJSCode(code);
+                    break;
+                case CODE_TYPE.VSHADER:
+                    // console.log(code);
+                    this.applyVShaderCode(tab.target, code);
+                    break;
+                case CODE_TYPE.FSAHDER:
+                    this.applyFShaderCode(tab.target, code);
+                    break;
+                default:
+                    console.error('标签页种类错误：' + tab.type);
+                    break;
+            }
+        })
+
+        // resize操作
+        this.resizeHandler.addEventListener('mousedown', (ev) => {
+            this.resizeHandler.holding = true;
+            this.panelContainer.blur();
+        })
+
+        document.addEventListener('mouseup', (ev) => {
+            this.resizeHandler.holding = false;
+        })
+
+        document.addEventListener('mousemove', (ev) => {
+            if (this.resizeHandler.holding) {
+                let w = window.innerWidth - ev.clientX;
+                this.sizePercent = w / window.innerWidth;
+                this.changeSize(w);
+            }
         })
     }
 
-    refresh()
-    {
-        this.editP.textContent = this.customJS;
+    refresh() {
+        this.removeTabs();
+
+        this.spawnTabs();
+
+        this.tabs.forEach((tab, index, arr) => {
+            tab.index = index;
+            tab.addEventListener('click', () => {
+                this.chooseTab(tab);
+            })
+        })
+
+        this.chooseTab(this.tabs[0]);
+
+        this.setVisability(this.visability);
     }
 
-    applyCode()
-    {
+    removeTabs() {
+        this.tabs.forEach((tab, index, arr) => {
+            tab.remove();
+        })
+        this.panels.forEach((panel, index, arr) => {
+            panel.remove();
+        })
+        this.tabs = [];
+        this.panels = [];
+        this.choise = -1;
+    }
+
+    spawnTabs() {
+        // 生成标签
+        let tabNames = ['script'];
+        let tabTarget = ['js'];
+        let tabType = [CODE_TYPE.JS];
+        let panelContents = [this.customJS];
+        this.editableShaderList.forEach((shader, index, arr) => {
+            let vShaderName = shader.vShaderFile.split('/');
+            let fShaderName = shader.fShaderFile.split('/');
+            tabNames.push(vShaderName[vShaderName.length - 1]);
+            tabNames.push(fShaderName[fShaderName.length - 1]);
+            tabType.push(CODE_TYPE.VSHADER);
+            tabType.push(CODE_TYPE.FSAHDER);
+            tabTarget.push(shader);
+            tabTarget.push(shader);
+
+            panelContents.push(shader.vShaderSource);
+            panelContents.push(shader.fShaderSource);
+        })
+
+        tabNames.forEach((tabName, index, arr) => {
+            let tab = document.createElement('div');
+            tab.textContent = tabName;
+            tab.classList.add('tab');
+            tab.target = tabTarget[index];
+            tab.type = tabType[index];
+            this.tabContainer.appendChild(tab);
+            this.tabs.push(tab);
+
+            let panel = document.createElement('div');
+            panel.textContent = panelContents[index];
+            panel.contentEditable = true;
+            panel.classList.add('panel');
+            this.panelContainer.appendChild(panel);
+            this.panels.push(panel);
+        })
+    }
+
+    chooseTab(tab) {
+        if (tab.index === this.choise) return;
+
+        // 取消选择现在的标签
+        if (this.choise >= 0) {
+            this.panels[this.choise].classList.remove('enable');
+            this.tabs[this.choise].classList.remove('enable');
+        }
+        // 选择标签
+        this.panels[tab.index].classList.add('enable');
+        tab.classList.add('enable');
+        this.choise = tab.index;
+    }
+
+    applyJSCode(code) {
         this.renderer.stop();
         this.renderer.clear();
-        this.renderer.customJS = this.editP.value;
+        this.renderer.customJS = code;
         this.renderer.start();
     }
+
+    /**
+     * 
+     * @param {Shader} shader 
+     */
+    applyVShaderCode(shader, code) {
+
+        shader.applyChange(code, shader.fShaderSource);
+    }
+    applyFShaderCode(shader, code) {
+        shader.applyChange(shader.vShaderSource, code);
+    }
+
+    changeSize(w, clamp = true) {
+        if (!this.visability) {
+            this.codeEditor.style.width = 0 + 'px';
+            height = canvas.clientHeight;
+            width = canvas.clientWidth;
+            canvas.height = height;
+            canvas.width = width;
+            return;
+        }
+        if (clamp) {
+            if (w > window.innerWidth * 0.9) w = window.innerWidth * 0.9;
+            if (w < window.innerWidth * 0.1) w = window.innerWidth * 0.1;
+        }
+        this.codeEditor.style.width = w + 'px';
+        height = canvas.clientHeight;
+        width = canvas.clientWidth;
+        canvas.height = height;
+        canvas.width = width;
+    }
+
+    setVisability(visability) {
+        if (this.visability === visability) return;
+        this.visability = visability;
+        if (visability) {
+            this.changeSize(window.innerWidth * this.sizePercent);
+        }
+        else {
+            this.changeSize(0, false);
+        }
+    }
 }
+

@@ -9,7 +9,6 @@ request.onreadystatechange = () =>
     if (request.readyState === 4 && request.status !== 404)
     {
         customJS = request.responseText;
-        // console.log(customJS);
 
         renderer = new WebGLRenderer();
         renderer.customJS = customJS;

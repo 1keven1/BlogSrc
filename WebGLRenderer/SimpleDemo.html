@@ -1,28 +1,49 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8">
-        <title>WebGL渲染器</title>
-    </head>
-    <body>
-        <canvas width="700" height="700">请使用支持Canvas的浏览器</canvas>
-        <textarea rows="50" cols="100"></textarea>
-        <button class="apply-code">确定</button>
 
-        <script src="./RendererLib/webgl-utils.js"></script>
-        <script src="./RendererLib/webgl-debug.js"></script>
-        <script src="./RendererLib/cuon-utils.js"></script>
-        <script src="./RendererLib/cuon-matrix.js"></script>
-        
-        <script src="./RendererLib/Actor.js"></script>
-        <script src="./RendererLib/Texture.js"></script>
-        <script src="./RendererLib/Shader.js"></script>
-        <script src="./RendererLib/Material.js"></script>
-        <script src="./RendererLib/Model.js"></script>
-        <script src="./RendererLib/Scene.js"></script>
-        <script src="./RendererLib/WebGLRenderer.js"></script>
-        <script src="./RendererLib/FunctionLibrary.js"></script>
+<head>
+    <meta charset="utf-8">
+    <title>WebGL渲染器</title>
+    <link rel="stylesheet" href="./RendererLib/MainStyle.css">
+    <link rel="stylesheet" href="./RendererLib/CodeEditorStyle.css">
+</head>
 
-        <script src="./SimpleDemo.js"></script>
-    </body>
+<body>
+    <div class="layout">
+        <div class="renderer">
+            <canvas>请使用支持Canvas的浏览器</canvas>
+        </div>
+
+        <section class="code-editor">
+            <div class="resize-handler"></div>
+            <div class="toggle-code"></div>
+            <div class="tabs">
+
+            </div>
+            <div class="panels">
+
+            </div>
+            <div class="footer">
+                <button class="apply-code">确定</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="./RendererLib/webgl-utils.js"></script>
+    <script src="./RendererLib/webgl-debug.js"></script>
+    <script src="./RendererLib/cuon-utils.js"></script>
+    <script src="./RendererLib/cuon-matrix.js"></script>
+
+    <script src="./RendererLib/Actor.js"></script>
+    <script src="./RendererLib/Texture.js"></script>
+    <script src="./RendererLib/Shader.js"></script>
+    <script src="./RendererLib/Material.js"></script>
+    <script src="./RendererLib/Model.js"></script>
+    <script src="./RendererLib/Scene.js"></script>
+    <script src="./RendererLib/WebGLRenderer.js"></script>
+    <script src="./RendererLib/FunctionLibrary.js"></script>
+
+    <script src="./SimpleDemo.js"></script>
+</body>
+
 </html>
