@@ -1,12 +1,24 @@
 'use strict';
-const canvas = document.querySelector('canvas');
-if (!canvas) {
-    console.console.error('获取Canvas失败');
-}
+const canvas = document.querySelector('.gl-canvas');
 const gl = getWebGLContext(canvas);
-if (!gl) {
-    console.error("Get WebGL Render Context Failed");
+let initCanvasAndWebGL = function () {
+    if (!canvas) {
+        console.console.error('获取Canvas失败');
+    }
+    canvas.bLeftMouse = false;
+    canvas.bRightMouse = false;
+    canvas.bMiddleMouse = false;
+    canvas.mouseX = 0.0;
+    canvas.mouseY = 0.0;
+    canvas.wheel = 0;
+
+    if (!gl) {
+        console.error("Get WebGL Render Context Failed");
+    }
 }
+initCanvasAndWebGL();
+// const hud = document.querySelector('.hud-canvas');
+// const ctx = hud.getContext('2d');
 
 let width = canvas.clientWidth;
 let height = canvas.clientHeight;
@@ -22,13 +34,10 @@ class WebGLRenderer {
         this.customJS = null;
         this.frameRequest = null;
         this.codeEditor = new CodeEditor(this);
+        this.hud = new HUD(this);
         this.clearColor = [0.0, 0.0, 0.0, 1.0];
 
-        this.codeEditor.changeSize(window.innerWidth * this.codeEditor.sizePercent);
-
-        window.onresize = () => {
-            this.codeEditor.changeSize(window.innerWidth * this.codeEditor.sizePercent);
-        }
+        this.implementEvents();
     }
 
     start() {
@@ -38,6 +47,7 @@ class WebGLRenderer {
 
         this.bulidScene(this.scene);
         // 加载场景
+        this.hud.changeLoadState(LOAD_STATE.LOADING);
         this.scene.loadOver = this.startRenderLoop.bind(this);
         this.scene.load();
     }
@@ -49,6 +59,7 @@ class WebGLRenderer {
     bulidScene(scene) { }
 
     startRenderLoop() {
+        this.hud.changeLoadState(LOAD_STATE.FINISH);
         this.codeEditor.refresh();
 
         this.customBeginPlay();
@@ -60,10 +71,15 @@ class WebGLRenderer {
             this.lastTime = timeStamp;
 
             if (deltaSecond > 1) deltaSecond = 0.01;
+
+            this.scene.update(deltaSecond);
+
             this.customTick(deltaSecond);
 
             this.scene.calculateMatrices();
             this.scene.render(this.clearColor);
+
+            // this.drawHUD();
             this.frameRequest = requestAnimationFrame(renderLoop);
         }
         renderLoop(0);
@@ -93,13 +109,94 @@ class WebGLRenderer {
         this.scene.clear();
     }
 
-    initWebGL() {
-        gl = getWebGLContext(canvas);
-        if (!gl) {
-            console.error("Get WebGL Render Context Failed");
+    implementEvents() {
+        // 禁用右键菜单
+        document.oncontextmenu = function () {
+            return false;
         }
+
+        window.onresize = () => {
+            this.codeEditor.changeSize(window.innerWidth * this.codeEditor.sizePercent * this.codeEditor.multi, false);
+        }
+
+        canvas.addEventListener('mousemove', (ev) => {
+            canvas.mouseX = ev.offsetX;
+            canvas.mouseY = ev.offsetY;
+        });
+        canvas.addEventListener('mousedown', (ev) => {
+            switch (ev.button) {
+                // 左键
+                case 0:
+                    canvas.bLeftMouse = true;
+                    break;
+                // 中键
+                case 1:
+                    canvas.bMiddleMouse = true;
+                    break;
+                // 右键
+                case 2:
+                    canvas.bRightMouse = true;
+                    break;
+                default:
+                    console.warn('mousedown事件返回值button值错误：', ev.button);
+                    break;
+            }
+        });
+        canvas.addEventListener('mouseup', (ev) => {
+            switch (ev.button) {
+                // 左键
+                case 0:
+                    canvas.bLeftMouse = false;
+                    break;
+                // 中键
+                case 1:
+                    canvas.bMiddleMouse = false;
+                    break;
+                // 右键
+                case 2:
+                    canvas.bRightMouse = false;
+                    break;
+                default:
+                    console.warn('mouseup事件返回值button值错误：', ev.button);
+                    break;
+            }
+        });
+        canvas.addEventListener('mouseleave', (ev) => {
+            canvas.bLeftMouse = false;
+            canvas.bRightMouse = false;
+            canvas.bMiddleMouse = false;
+        });
+        canvas.addEventListener('touchstart', (ev) => {
+            canvas.bLeftMouse = true;
+        });
+        canvas.addEventListener('touchend', (ev) => {
+            canvas.bLeftMouse = false;
+        });
+        canvas.addEventListener('touchmove', (ev) => {
+            canvas.mouseX = ev.touches[touches.length - 1].clientX;
+            canvas.mouseY = ev.touches[touches.length - 1].clientY;
+        });
+    }
+
+    drawHUD() {
+        ctx.clearRect(0, 0, 400, 400);
+        // 绘制三角形
+        ctx.beginPath();
+        ctx.moveTo(120, 10);
+        ctx.lineTo(200, 150);
+        ctx.lineTo(40, 150);
+        ctx.closePath();
+        ctx.strokeStyle = 'rgba(255, 100, 255, 1)';
+        ctx.stroke();
+        // 绘制字体
+        ctx.font = '18px "Times New Roman"';
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillText('This is a hud', 40, 180);
+        ctx.fillText('Current Angle: ' + Math.floor(100), 40, 200);
     }
 }
+
+
 
 let CODE_TYPE = {
     JS: Symbol(0),
@@ -128,8 +225,15 @@ class CodeEditor {
         this.panelContainer = this.codeEditor.querySelector('.panels');
         this.applyButton = this.codeEditor.querySelector('.apply-code');
         this.resizeHandler = this.codeEditor.querySelector('.resize-handler');
-        this.choise = -1;
+
         this.visability = false;
+        this.resizeHandler.holding = false;
+        this.resizeHandler.bActive = this.visability;
+        this.choise = -1;
+
+        this.changeSize(this.visability ? window.innerWidth * this.sizePercent : 0, false);
+        this.multi = this.visability ? 1 : 0;
+        this.goal = 0;
 
         this.implementEvents();
     }
@@ -137,7 +241,7 @@ class CodeEditor {
     implementEvents() {
         // 切换代码显示
         this.toogleCode.addEventListener('click', () => {
-            this.setVisability(!this.visability);
+            this.setVisabilityAnimate(!this.visability);
         })
 
         // 确定按钮
@@ -163,15 +267,18 @@ class CodeEditor {
 
         // resize操作
         this.resizeHandler.addEventListener('mousedown', (ev) => {
+            if(!this.resizeHandler.bActive) return;
             this.resizeHandler.holding = true;
             this.panelContainer.blur();
         })
 
         document.addEventListener('mouseup', (ev) => {
+            if (!this.resizeHandler.bActive) return;
             this.resizeHandler.holding = false;
         })
 
         document.addEventListener('mousemove', (ev) => {
+            if (!this.resizeHandler.bActive) return;
             if (this.resizeHandler.holding) {
                 let w = window.innerWidth - ev.clientX;
                 this.sizePercent = w / window.innerWidth;
@@ -195,6 +302,7 @@ class CodeEditor {
         this.chooseTab(this.tabs[0]);
 
         this.setVisability(this.visability);
+
     }
 
     removeTabs() {
@@ -211,7 +319,7 @@ class CodeEditor {
 
     spawnTabs() {
         // 生成标签
-        let tabNames = ['script'];
+        let tabNames = ['Script'];
         let tabTarget = ['js'];
         let tabType = [CODE_TYPE.JS];
         let panelContents = [this.customJS];
@@ -281,14 +389,14 @@ class CodeEditor {
     }
 
     changeSize(w, clamp = true) {
-        if (!this.visability) {
-            this.codeEditor.style.width = 0 + 'px';
-            height = canvas.clientHeight;
-            width = canvas.clientWidth;
-            canvas.height = height;
-            canvas.width = width;
-            return;
-        }
+        // if (!this.visability) {
+        //     this.codeEditor.style.width = 0 + 'px';
+        //     height = canvas.clientHeight;
+        //     width = canvas.clientWidth;
+        //     canvas.height = height;
+        //     canvas.width = width;
+        //     return;
+        // }
         if (clamp) {
             if (w > window.innerWidth * 0.9) w = window.innerWidth * 0.9;
             if (w < window.innerWidth * 0.1) w = window.innerWidth * 0.1;
@@ -303,6 +411,8 @@ class CodeEditor {
     setVisability(visability) {
         if (this.visability === visability) return;
         this.visability = visability;
+        this.resizeHandler.holding = false;
+        this.resizeHandler.bActive = visability;
         if (visability) {
             this.changeSize(window.innerWidth * this.sizePercent);
         }
@@ -310,5 +420,73 @@ class CodeEditor {
             this.changeSize(0, false);
         }
     }
+
+    setVisabilityAnimate(visability, animSpeed = 15) {
+        if (this.visability === visability) return;
+        this.visability = visability;
+        this.resizeHandler.holding = false;
+        this.resizeHandler.bActive = visability;
+
+        this.goal = visability ? 1 : 0;
+
+        if (this.multi !== 0 && this.multi !== 1) return;
+
+        let anim = setInterval(() => {
+            this.multi = fInterpTo(this.multi, this.goal, 1 / 60, animSpeed);
+
+            this.changeSize(window.innerWidth * this.sizePercent * this.multi, false);
+
+            if (this.multi === this.goal) {
+                clearInterval(anim);
+                anim = null;
+            }
+        }, 1000 / 60);
+    }
 }
 
+let LOAD_STATE = {
+    LOADING: Symbol(0),
+    FINISH: Symbol(1),
+    FAIL: Symbol(2)
+}
+Object.freeze(LOAD_STATE);
+
+class HUD {
+    constructor(renderer) {
+        this.renderer = renderer;
+
+        this.visability = true;
+        this.hud = document.querySelector('.hud');
+
+        this.centerHud = this.hud.querySelector('.center-hud');
+        this.centerHud.icon = this.centerHud.querySelector('.iconfont');
+        this.centerHud.text = this.centerHud.querySelector('.text');
+        this.centerHud.visability = false;
+    }
+
+    changeLoadState(loadState) {
+        switch (loadState) {
+            case LOAD_STATE.LOADING:
+                this.setCenterHubVisability(true);
+                break;
+            case LOAD_STATE.FINISH:
+                this.setCenterHubVisability(false);
+                break;
+            case LOAD_STATE.FAIL:
+                break;
+            default:
+                break;
+        }
+    }
+
+    setVisability(visability) {
+        if (this.visability === visability) return;
+        this.visability = visability;
+    }
+
+    setCenterHubVisability(visability) {
+        if (this.centerHud.visability === visability) return;
+        this.centerHud.visability = visability;
+        this.centerHud.style.display = visability ? 'flex' : 'none';
+    }
+}

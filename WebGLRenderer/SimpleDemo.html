@@ -11,12 +11,19 @@
 <body>
     <div class="layout">
         <div class="renderer">
-            <canvas>请使用支持Canvas的浏览器</canvas>
+            <canvas class="gl-canvas">请使用支持Canvas的浏览器</canvas>
+            <!-- <canvas class="hud-canvas" style="z-index: 1;">请使用支持Canvas的浏览器</canvas> -->
+            <div class="hud">
+                <div class="center-hud">
+                    <div class='iconfont'>&#xe8fc;</div>
+                    <div class='text'>加载中···</div>
+                </div>
+            </div>
         </div>
 
         <section class="code-editor">
+            <div class="toggle-code iconfont">&#xe6f2;</div>
             <div class="resize-handler"></div>
-            <div class="toggle-code"></div>
             <div class="tabs">
 
             </div>
@@ -24,7 +31,7 @@
 
             </div>
             <div class="footer">
-                <button class="apply-code">确定</button>
+                <button class="apply-code iconfont">&#xe600;</button>
             </div>
         </section>
     </div>
@@ -43,7 +50,22 @@
     <script src="./RendererLib/WebGLRenderer.js"></script>
     <script src="./RendererLib/FunctionLibrary.js"></script>
 
-    <script src="./SimpleDemo.js"></script>
+    <script>
+        let renderer;
+        let request = new XMLHttpRequest();
+
+        request.onreadystatechange = () => {
+            if (request.readyState === 4 && request.status !== 404) {
+                let customJS = request.responseText;
+
+                renderer = new WebGLRenderer();
+                renderer.customJS = customJS;
+                renderer.start();
+            }
+        }
+        request.open('GET', './CustomScript.js', true);
+        request.send();
+    </script>
 </body>
 
 </html>
