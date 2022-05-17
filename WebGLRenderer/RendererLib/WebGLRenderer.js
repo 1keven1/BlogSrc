@@ -120,8 +120,8 @@ class WebGLRenderer {
         }
 
         canvas.addEventListener('mousemove', (ev) => {
-            canvas.mouseX = ev.offsetX;
-            canvas.mouseY = ev.offsetY;
+            canvas.mouseX = ev.clientX;
+            canvas.mouseY = ev.clientY;
         });
         canvas.addEventListener('mousedown', (ev) => {
             switch (ev.button) {
@@ -167,14 +167,16 @@ class WebGLRenderer {
             canvas.bMiddleMouse = false;
         });
         canvas.addEventListener('touchstart', (ev) => {
+            canvas.mouseX = ev.touches[0].clientX;
+            canvas.mouseY = ev.touches[0].clientY;
             canvas.bLeftMouse = true;
         });
         canvas.addEventListener('touchend', (ev) => {
             canvas.bLeftMouse = false;
         });
         canvas.addEventListener('touchmove', (ev) => {
-            canvas.mouseX = ev.touches[touches.length - 1].clientX;
-            canvas.mouseY = ev.touches[touches.length - 1].clientY;
+            canvas.mouseX = ev.touches[0].clientX;
+            canvas.mouseY = ev.touches[0].clientY;
         });
     }
 
