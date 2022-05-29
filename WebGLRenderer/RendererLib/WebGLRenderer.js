@@ -249,16 +249,27 @@ class CodeEditor {
         // 确定按钮
         this.applyButton.addEventListener('click', () => {
             let tab = this.tabs[this.choise];
-            let code = this.panels[this.choise].textContent;
+            let panel = this.panels[this.choise];
+
+            // 处理换行问题 给新生成的div添加换行符
+            let divs = panel.querySelectorAll('div');
+            divs.forEach((div, index, arr) =>{
+                div.textContent = '\n' + div.textContent;
+            })
+            panel.textContent = panel.textContent;
+
+            // 应用编辑
+            let code = panel.textContent;
             switch (tab.type) {
                 case CODE_TYPE.JS:
                     this.applyJSCode(code);
                     break;
                 case CODE_TYPE.VSHADER:
-                    // console.log(code);
+                    this.refreshHighlight(panel);
                     this.applyVShaderCode(tab.target, code);
                     break;
                 case CODE_TYPE.FSAHDER:
+                    this.refreshHighlight(panel);
                     this.applyFShaderCode(tab.target, code);
                     break;
                 default:
@@ -269,7 +280,7 @@ class CodeEditor {
 
         // resize操作
         this.resizeHandler.addEventListener('mousedown', (ev) => {
-            if(!this.resizeHandler.bActive) return;
+            if (!this.resizeHandler.bActive) return;
             this.resizeHandler.holding = true;
             this.panelContainer.blur();
         })
@@ -293,6 +304,10 @@ class CodeEditor {
         this.removeTabs();
 
         this.spawnTabs();
+
+        this.panels.forEach((panel, index, arr) => {
+            this.refreshHighlight(panel);
+        })
 
         this.tabs.forEach((tab, index, arr) => {
             tab.index = index;
@@ -348,10 +363,12 @@ class CodeEditor {
             this.tabContainer.appendChild(tab);
             this.tabs.push(tab);
 
-            let panel = document.createElement('div');
+            let panel = document.createElement('code');
             panel.textContent = panelContents[index];
             panel.contentEditable = true;
             panel.classList.add('panel');
+            if (tab.type === CODE_TYPE.JS) panel.classList.add('language-javascript');
+            if (tab.type === CODE_TYPE.VSHADER || tab.type === CODE_TYPE.FSAHDER) panel.classList.add('language-glsl');
             this.panelContainer.appendChild(panel);
             this.panels.push(panel);
         })
@@ -383,7 +400,6 @@ class CodeEditor {
      * @param {Shader} shader 
      */
     applyVShaderCode(shader, code) {
-
         shader.applyChange(code, shader.fShaderSource);
     }
     applyFShaderCode(shader, code) {
@@ -443,6 +459,14 @@ class CodeEditor {
                 anim = null;
             }
         }, 1000 / 60);
+    }
+
+    /**
+     * 刷新面板代码高亮
+     * @param {HTMLElement} panel 需要刷新高亮的面板
+     */
+    refreshHighlight(panel) {
+        hljs.highlightElement(panel);
     }
 }
 
