@@ -17,8 +17,6 @@ let initCanvasAndWebGL = function () {
     }
 }
 initCanvasAndWebGL();
-// const hud = document.querySelector('.hud-canvas');
-// const ctx = hud.getContext('2d');
 
 let width = canvas.clientWidth;
 let height = canvas.clientHeight;
@@ -68,10 +66,10 @@ class WebGLRenderer {
         console.log('开始渲染循环');
         this.lastTime = 0;
         let renderLoop = (timeStamp) => {
-            let deltaSecond = (timeStamp - this.lastTime) * 0.01;
+            let deltaSecond = (timeStamp - this.lastTime) * 0.001;
             this.lastTime = timeStamp;
 
-            if (deltaSecond > 1) deltaSecond = 0.01;
+            if (deltaSecond > 1) deltaSecond = 0.001;
 
             this.scene.update(deltaSecond);
 
@@ -80,7 +78,7 @@ class WebGLRenderer {
             this.scene.calculateMatrices();
             this.scene.render(this.clearColor);
 
-            // this.drawHUD();
+            this.hud.update(deltaSecond);
             this.frameRequest = requestAnimationFrame(renderLoop);
         }
         renderLoop(0);
@@ -202,7 +200,7 @@ class WebGLRenderer {
 let CODE_TYPE = {
     JS: Symbol(0),
     VSHADER: Symbol(1),
-    FSAHDER: Symbol(2)
+    FSHADER: Symbol(2)
 }
 Object.freeze(CODE_TYPE);
 
@@ -267,7 +265,7 @@ class CodeEditor {
                     this.refreshHighlight(panel);
                     this.applyVShaderCode(tab.target, code);
                     break;
-                case CODE_TYPE.FSAHDER:
+                case CODE_TYPE.FSHADER:
                     this.refreshHighlight(panel);
                     this.applyFShaderCode(tab.target, code);
                     break;
@@ -339,18 +337,14 @@ class CodeEditor {
         let tabTarget = ['js'];
         let tabType = [CODE_TYPE.JS];
         let panelContents = [this.customJS];
-        this.editableShaderList.forEach((shader, index, arr) => {
-            let vShaderName = shader.vShaderFile.split('/');
-            let fShaderName = shader.fShaderFile.split('/');
-            tabNames.push(vShaderName[vShaderName.length - 1]);
-            tabNames.push(fShaderName[fShaderName.length - 1]);
-            tabType.push(CODE_TYPE.VSHADER);
-            tabType.push(CODE_TYPE.FSAHDER);
-            tabTarget.push(shader);
-            tabTarget.push(shader);
 
-            panelContents.push(shader.vShaderSource);
-            panelContents.push(shader.fShaderSource);
+        this.editableShaderList.forEach((func, index, arr) => {
+            let shaderObject = func();
+
+            tabType.push(shaderObject.type);
+            tabTarget.push(shaderObject.target);
+            tabNames.push(shaderObject.shaderName);
+            panelContents.push(shaderObject.shaderSource);
         })
 
         tabNames.forEach((tabName, index, arr) => {
@@ -367,7 +361,7 @@ class CodeEditor {
             panel.contentEditable = true;
             panel.classList.add('panel');
             if (tab.type === CODE_TYPE.JS) panel.classList.add('language-javascript');
-            if (tab.type === CODE_TYPE.VSHADER || tab.type === CODE_TYPE.FSAHDER) panel.classList.add('language-glsl');
+            if (tab.type === CODE_TYPE.VSHADER || tab.type === CODE_TYPE.FSHADER) panel.classList.add('language-glsl');
             this.panelContainer.appendChild(panel);
             this.panels.push(panel);
         })
@@ -487,6 +481,8 @@ class HUD {
         this.centerHud.icon = this.centerHud.querySelector('.iconfont');
         this.centerHud.text = this.centerHud.querySelector('.text');
         this.centerHud.visability = false;
+
+        this.fpsDiv = this.hud.querySelector('.fps');
     }
 
     changeLoadState(loadState) {
@@ -514,6 +510,12 @@ class HUD {
         this.centerHud.visability = visability;
         this.centerHud.style.display = visability ? 'flex' : 'none';
     }
+
+    update(deltaSecond){
+        let fps = 1 / deltaSecond;
+
+        this.fpsDiv.textContent = Math.round(fps) + ' FPS';
+    }
 }
 
 class ShowCasesPanel{
@@ -534,6 +536,28 @@ class ShowCasesPanel{
         this.showPanel.style.transitionProperty = 'none';
 
         this.showPanel.style.left = this.visability ? '0px' : '-400px';
+
+        // 读取JSON文件
+        let jsonRequest = new XMLHttpRequest();
+        jsonRequest.onreadystatechange = () =>{
+            if(jsonRequest.readyState === 4 && jsonRequest.status !== 404){
+                let jsonText = jsonRequest.responseText;
+                let showCaseObjects = JSON.parse(jsonText);
+
+                // 生成ShowCases
+                showCaseObjects.forEach((showCaseObject, index, number) => {
+                    let showCase = this.spawnShowCase(showCaseObject);
+
+                    showCase.addEventListener('click', () => {
+                        window.open(showCase.url);
+                    })
+
+                    this.caseContainer.appendChild(showCase);
+                })
+            }
+        }
+        jsonRequest.open('GET', './ShowCases.json', true);
+        jsonRequest.send();
     }
 
     implementEvents(){
@@ -547,5 +571,41 @@ class ShowCasesPanel{
     changeVisability(visability){
         if(visability !== this.visability) this.visability = visability;
         this.showPanel.style.left = visability ? '0px' : '-400px';
+    }
+
+    /**
+     * 生成ShowCase元素
+     * @param {Object} showCaseObj json解码后的Object
+     * @returns ShowCase Html元素
+     */
+    spawnShowCase(showCaseObj){
+        let showCase = document.createElement('div');
+        showCase.classList.add('show-case');
+
+        let image = document.createElement('img');
+        image.alt = "展示图";
+        showCase.appendChild(image);
+
+        let textDiv = document.createElement('div');
+        textDiv.classList.add('text');
+        showCase.appendChild(textDiv);
+
+        let titleDiv = document.createElement('div');
+        titleDiv.classList.add('title');
+        textDiv.appendChild(titleDiv);
+
+        let desDiv = document.createElement('div');
+        desDiv.classList.add('description');
+        textDiv.appendChild(desDiv);
+
+        let titleP = document.createElement('p');
+        titleDiv.appendChild(titleP);
+
+        image.src = showCaseObj.imageSrc;
+        titleP.textContent = showCaseObj.title;
+        desDiv.textContent = showCaseObj.description;
+        showCase.url = showCaseObj.url;
+
+        return showCase;
     }
 }
