@@ -15,13 +15,12 @@ uniform vec4 u_LightPos;
 uniform vec4 u_LightColor;
 uniform vec4 u_CameraPos;
 uniform mat4 u_Matrix_Light;
+uniform vec3 u_AmbientColor;
 
 uniform sampler2D u_ShadowMap;
 uniform vec4 u_ShadowMap_TexelSize;
 
-uniform vec3 u_AmbientColor;
-uniform sampler2D u_TexBC;
-uniform sampler2D u_TexN;
+uniform vec3 u_Color;
 
 varying vec2 v_TexCoord;
 varying vec3 v_WorldNormal;
@@ -67,29 +66,21 @@ float getShadow() {
 
 // Main函数在这里
 void main() {
-    vec2 uv = v_TexCoord;
-    vec3 viewDir = normalize(u_CameraPos.xyz - v_WorldPos);
-    
-    // 法线
     vec3 worldNormal = normalize(v_WorldNormal);
-    vec3 worldTangent = normalize(v_WorldTangent);
-    vec3 WorldBinormal = normalize(v_WorldBinormal);
-    vec3 tangentNormal = texture2D(u_TexN, uv).xyz * vec3(2) - vec3(1);
-    tangentNormal.xy *= 1.0;
-    vec3 finalNormal = normalize(vec3(tangentNormal.x) * worldTangent + vec3(-tangentNormal.y) * WorldBinormal + vec3(tangentNormal.z) * worldNormal);
+    vec3 lightDir = normalize(u_LightPos.xyz);
+    vec3 viewDir = normalize(u_CameraPos.xyz - v_WorldPos);
 
     bool twoSizeSign = dot(viewDir, worldNormal) > 0.0;
-    finalNormal *= twoSizeSign ? 1.0 : -1.0;
+    worldNormal *= twoSizeSign ? 1.0 : -1.0;
 
     // 漫反射
-    vec3 albedo = texture2D(u_TexBC, uv).xyz;
-    vec3 lightDir = normalize(u_LightPos.xyz);
-    float nDotL = max(0.0, dot(finalNormal, lightDir));
+    vec3 albedo = u_Color;
+    float nDotL = max(0.0, dot(worldNormal, lightDir));
     vec3 diffuse = albedo * nDotL * u_LightColor.xyz;
 
     // 高光
     vec3 halfVec = normalize(lightDir + viewDir);
-    float nDotH = max(0.0, dot(finalNormal, halfVec));
+    float nDotH = max(0.0, dot(worldNormal, halfVec));
     vec3 specular = pow(nDotH, 128.0) * u_LightColor.xyz;
 
     vec3 ambient = u_AmbientColor.xyz * albedo;
@@ -97,5 +88,5 @@ void main() {
     float shadow = getShadow();
 
     vec3 finalColor = (diffuse + specular) * shadow + ambient;
-    gl_FragColor = vec4(finalColor, 1);
+    gl_FragColor = vec4(finalColor, 0.5);
 }

@@ -102,6 +102,39 @@ class Scene {
         this.camera.update(deltaSecond);
     }
 
+    /**
+     * 基于renderQueue和距离摄像机的距离对Mesh List排序
+     */
+    sortRenderOrder(){
+        // 先计算出所有东西距离摄像机的距离
+        this.meshList.forEach((mesh, index, arr) => {
+            mesh.distanceFromCamera = mesh.distanceToActor(this.camera);
+        })
+
+        // 排序
+        this.meshList.sort((a, b) => {
+            // 如果renderqueue值不一样 就按照renderqueue排序
+            if(a.material.renderQueue !== b.material.renderQueue){
+                return (a.material.renderQueue - b.material.renderQueue);
+            }
+            // 一样就看距离摄像机的距离
+            else{
+                // 不透明和蒙版从近到远排序
+                if (a.material.materialType === MATERIAL_TYPE.OPAQUE || a.material.materialType === MATERIAL_TYPE.MASKED)
+                    return (a.distanceFromCamera - b.distanceFromCamera);
+                // 透明和叠加从远到近
+                if (a.material.materialType === MATERIAL_TYPE.TRANSLUCENT || a.material.materialType === MATERIAL_TYPE.ADDITIVE)
+                    return -(a.distanceFromCamera - b.distanceFromCamera);
+                // 除此之外不排序 报错
+                else{
+                    console.error('渲染队列排序：不存在的材质类型：' + a.materialType);
+                    return 0;
+                }
+            }
+        })
+
+    }
+
     calculateMatrices() {
         // 计算Mesh的M矩阵
         this.meshList.forEach((mesh, index, arr) => {
@@ -177,7 +210,10 @@ class Scene {
             gl.useProgram(mesh.material.getBaseProgram());
 
             if (mesh.material.bDepthTest) gl.enable(gl.DEPTH_TEST);
-            else gl.disable(gl.DIPTH_TEST);
+            else gl.disable(gl.DEPTH_TEST);
+
+            if(mesh.material.bDepthWrite) gl.depthMask(true);
+            else gl.depthMask(false);
 
             switch (mesh.material.cullMode) {
                 case CULL_MODE.BACK:
@@ -194,6 +230,14 @@ class Scene {
                 default:
                     console.warn("有不正确的Cull Type");
                     break;
+            }
+
+            if(mesh.material.bBlend){
+                gl.enable(gl.BLEND);
+                gl.blendFunc(mesh.material.srcFactor, mesh.material.desFactor);
+            }
+            else{
+                gl.disable(gl.BLEND);
             }
 
             // 绑定Vertex Buffer

@@ -29,7 +29,7 @@ varying vec2 v_TexCoord;
 varying vec3 v_WorldNormal;
 varying vec3 v_WorldTangent;
 varying vec3 v_WorldBinormal;
-varying vec3 v_viewDir;
+varying vec3 v_WorldPos;
 
 varying vec4 v_PositionFromLight;
 
@@ -82,13 +82,17 @@ void main() {
     tangentNormal.xy *= 0.9; 
     vec3 finalNormal = normalize(vec3(tangentNormal.x) * worldTangent + vec3(-tangentNormal.y) * WorldBinormal + vec3(tangentNormal.z) * worldNormal);
 
+    vec3 viewDir = normalize(u_CameraPos.xyz - v_WorldPos);
+
+    bool twoSizeSign = dot(viewDir, worldNormal) > 0.0;
+    finalNormal *= twoSizeSign ? 1.0 : -1.0;
+
     // 漫反射
     vec3 lightDir = normalize(u_LightPos.xyz);
     float nDotL = max(0.0, dot(finalNormal, lightDir));
     vec3 diffuse = albedo * nDotL * u_LightColor.xyz;
 
     // 高光
-    vec3 viewDir = normalize(v_viewDir);
     vec3 halfVec = normalize(lightDir + viewDir);
     float nDotH = max(0.0, dot(finalNormal, halfVec));
     float roughness = texture2D(u_Roughness, uv, mipmapBias).x;
