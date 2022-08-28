@@ -18,11 +18,9 @@ uniform mat4 u_Matrix_Light;
 
 uniform sampler2D u_ShadowMap;
 uniform vec4 u_ShadowMap_TexelSize;
-uniform samplerCube u_AmbientCubeMap;
 
 uniform vec3 u_AmbientColor;
-uniform sampler2D u_TexBC;
-uniform sampler2D u_TexN;
+uniform samplerCube u_Cube;
 
 varying vec2 v_TexCoord;
 varying vec3 v_WorldNormal;
@@ -56,7 +54,7 @@ float getShadow() {
     PCFFilter[8] = vec2(-0.707, -0.707);
 
     for(int i = 0; i < 9; i++) {
-        vec2 offset = PCFFilter[i] * u_ShadowMap_TexelSize.zw * vec2(1);
+        vec2 offset = PCFFilter[i] * u_ShadowMap_TexelSize.zw * vec2(1.5);
         vec4 rgbaDepth = texture2D(u_ShadowMap, shadowCoord.xy + offset);
         float depth = unpackDepth(rgbaDepth);
         float shadow = (shadowCoord.z > depth + 0.0001) ? 0.0 : 1.0;
@@ -68,40 +66,14 @@ float getShadow() {
 
 // Main函数在这里
 void main() {
-    vec2 uv = v_TexCoord;
-
-    // 法线
     vec3 worldNormal = normalize(v_WorldNormal);
-    vec3 worldTangent = normalize(v_WorldTangent);
-    vec3 WorldBinormal = normalize(v_WorldBinormal);
-    vec3 tangentNormal = texture2D(u_TexN, uv).xyz * vec3(2) - vec3(1);
-    tangentNormal.xy *= 0.7;
-    vec3 finalNormal = normalize(vec3(tangentNormal.x) * worldTangent + vec3(tangentNormal.y) * WorldBinormal + vec3(tangentNormal.z) * worldNormal);
-
-    // 漫反射
-    vec3 albedo = texture2D(u_TexBC, uv).xyz;
-    vec3 lightDir = normalize(u_LightPos.xyz);
-    float nDotL = max(0.0, dot(finalNormal, lightDir));
-    vec3 diffuse = albedo * nDotL * u_LightColor.xyz;
-
-    // 高光
     vec3 viewDir = normalize(u_CameraPos.xyz - v_WorldPos);
-    vec3 halfVec = normalize(lightDir + viewDir);
-    float nDotH = max(0.0, dot(finalNormal, halfVec));
-    nDotH = pow(nDotH, 8.0);
-    nDotH = smoothstep(0.8, 1.0, nDotH);
-    vec3 specular = nDotH * u_LightColor.xyz * 0.1;
 
-    // 环境光
-    vec3 ambient = textureCube(u_AmbientCubeMap, worldNormal * vec3(-1), float(5)).xyz * 0.1;
+    bool twoSizeSign = dot(viewDir, worldNormal) > 0.0;
+    worldNormal *= twoSizeSign ? 1.0 : -1.0;
 
-    // 阴影
-    float shadow = getShadow();
+    vec3 albedo = textureCube(u_Cube, -viewDir).xyz;
 
-    // 最终
-    vec3 finalColor = (diffuse + specular) * shadow + ambient;
-    //finalColor = finalColor / (finalColor + vec3(1.0));
-    //finalColor = pow(finalColor, vec3(1.0 / 2.2));
+    vec3 finalColor = albedo;
     gl_FragColor = vec4(finalColor, 1);
-    //gl_FragColor = textureCube(u_AmbientCubeMap, worldNormal * vec3(-1), float(5));
 }

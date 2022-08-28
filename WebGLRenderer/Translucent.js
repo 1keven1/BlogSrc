@@ -7,7 +7,7 @@ simpleCamera.zoomSpeed = 1;
 // 光源
 let light = new Light(
     new Transform(new Vector3([0.0, 5.0, 0.0]), new Vector3([-45, 45, 0])), new Vector3([1.0, 1.0, 1.0]),
-    10,
+    1,
     LIGHT_TYPE.DIRECTIONAL
 );
 // Shader
@@ -29,8 +29,8 @@ let quad = new Mesh(new Transform(new Vector3([0, 1.5, 0])), smQuad, mTrans, fal
 let quad2 = new Mesh(new Transform(new Vector3([0, 1.5, 0.5])), smQuad, mTrans2, false);
 let floor = new Mesh(new Transform(), smFloor, mFloor, true);
 // 贴图
-let tFloor = new Texture('./Res/Material/SpanishPavement_BC.png');
-let tFloorN = new Texture('./Res/Material/SpanishPavement_N.png')
+let tFloor = new Texture('./Res/Material/SpanishPavement_BC.jpg');
+let tFloorN = new Texture('./Res/Material/SpanishPavement_N.jpg')
 
 // 想编辑的Shader列表
 this.codeEditor.editableShaderList = [
