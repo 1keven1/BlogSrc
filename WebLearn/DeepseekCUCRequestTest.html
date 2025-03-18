@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI API 请求测试</title>
+</head>
+
+<body>
+    <h1>OpenAI API 请求测试</h1>
+    <br/>
+    <p class="response">回复：</p>
+
+
+    <script>
+        // 获取元素
+        var responseP = document.getElementsByClassName("response")[0];
+
+        // API Key
+        var APIKey = 'sk-a478fea1fe0c4080a13f36275467e552';
+
+        // 参数
+        var url = 'https://aihub.cuc.edu.cn/console/v1/chat/completions'
+        var model = "DeepSeek-R1-Distill-Qwen-32B";
+        var messages = [
+            { "role": "system", "content": "You are a helpful assistant" },
+            { "role": "user", "content": "Hello, how are you?" }
+        ];
+        var temperature = 0.7;
+
+        // 发送请求
+        function sendRequest(){
+            fetch(url, {
+                method: "POST",
+                headers: header,
+                body: JSON.stringify(body)
+            }).then(
+                function (response) {
+                    response.json().then(
+                        data => ShowResponse(data),
+                        error => console.log(error)
+                    );
+                });
+        }
+
+        // 获取回复
+        var responseData;
+        function ShowResponse(data) {
+            responseData = data;
+            var responseContent = responseData.choices[0].message.content;
+            console.log(responseContent);
+            console.log(responseData);
+
+            if(responseP) responseP.textContent = "回复：" + responseContent;
+        }
+
+
+        // 创建请求体
+        var header = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + APIKey
+        }
+
+        var body = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "stream": false
+        }
+    </script>
+
+    <script>
+        sendRequest();
+    </script>
+
+</body>
+
+</html>
