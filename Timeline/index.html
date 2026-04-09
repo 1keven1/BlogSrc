@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Interactive Timeline Visualization</title>
     <link rel="stylesheet" href="./style.css">
 </head>
@@ -14,15 +14,6 @@
         <div class="logo"> 时间轴可视化工具 </div>
 
         <div class="control-group">
-            <button class="btn btn-secondary" onclick="app.newTimeline()">
-                <span>➕</span> 新建时间轴
-            </button>
-            <button class="btn btn-secondary" onclick="app.importData()">
-                <span>📥</span> 导入
-            </button>
-            <button class="btn btn-secondary" onclick="app.exportData()">
-                <span>📤</span> 导出
-            </button>
             <button class="btn btn-secondary" id="themeToggle" onclick="app.toggleTheme()" title="切换日夜模式">
                 <span id="themeIcon">☀️</span> <span id="themeText">日间</span>
             </button>
@@ -54,20 +45,30 @@
         <!-- 时间轴视图 -->
         <main class="timeline-view">
             <div class="toolbar">
-                <div class="view-options">
-                    <button class="btn btn-secondary" onclick="app.previousEvent()">← 上一事件</button>
-                    <button class="btn btn-secondary" onclick="app.nextEvent()">下一事件 →</button>
-                </div>
                 <button class="btn btn-secondary" onclick="app.resetView()"> 重置视图 </button>
+                <button class="btn btn-secondary" id="fullscreenBtn" onclick="app.toggleFullscreen()"> 
+                    <span class="btn-icon">⛶</span>全屏 
+                </button>
+                <div class="view-range-inputs">
+                    <input type="number" class="form-input range-input" id="viewStartInput" placeholder="起始年份">
+                    <span class="range-separator">-</span>
+                    <input type="number" class="form-input range-input" id="viewEndInput" placeholder="结束年份">
+                    <button class="btn btn-secondary btn-sm" onclick="app.applyViewRange()">应用</button>
+                </div>
+                <button class="btn btn-secondary" id="currentTimeToggle" onclick="app.toggleCurrentTime()" title="显示/隐藏当前时间刻度">
+                   当前时间
+                </button>
             </div>
 
-            <div class="canvas-container" id="canvasContainer">
-                <canvas id="timelineCanvas"></canvas>
-                <div class="events-overlay" id="eventsOverlay"></div>
-                <div class="empty-state" id="emptyState" style="display: none;">
-                    <div class="empty-state-icon">📊</div>
-                    <div class="empty-state-text">请选择至少一个时间轴开始浏览</div>
+            <div class="timeline-canvas-wrapper">
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="timelineCanvas"></canvas>
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="empty-state-icon">📊</div>
+                        <div class="empty-state-text">请选择至少一个时间轴开始浏览</div>
+                    </div>
                 </div>
+                <div class="events-overlay" id="eventsOverlay"></div>
             </div>
 
             <!-- 范围选择器 -->
@@ -119,6 +120,15 @@
                 <span class="detail-meta-label">纪元/时期</span>
                 <span class="detail-meta-value" id="detailEra">-</span>
             </div>
+        </div>
+        <!-- 事件导航按钮 -->
+        <div class="detail-nav">
+            <button class="btn btn-secondary" onclick="app.previousEvent()">
+                <span>←</span> 上一事件
+            </button>
+            <button class="btn btn-secondary" onclick="app.nextEvent()">
+                下一事件 <span>→</span>
+            </button>
         </div>
     </div>
 
@@ -206,6 +216,30 @@
 
     <!-- 提示信息 -->
     <div class="toast" id="toast"></div>
+
+    <!-- 横屏提示（移动端） -->
+    <!-- 微信浏览器提示 -->
+    <div class="wechat-overlay" id="wechatOverlay">
+        <div class="wechat-content">
+            <div class="wechat-icon">⚠️</div>
+            <div class="wechat-text">请用自带浏览器打开</div>
+            <div class="wechat-subtext">微信浏览器不支持横屏模式</div>
+            <div class="wechat-hint">点击右上角 ⋮ 选择「在浏览器打开」</div>
+        </div>
+    </div>
+
+    <!-- 普通移动端横屏提示 -->
+    <div class="orientation-overlay" id="orientationOverlay">
+        <div class="orientation-content">
+            <div class="orientation-icon">📱</div>
+            <div class="orientation-text">请横屏使用</div>
+            <div class="orientation-subtext" id="orientationSubtext">为获得最佳体验，建议锁定为横屏模式</div>
+            <button class="orientation-btn" id="fullscreenBtn" onclick="app.enterFullscreenAndLock()">
+                <span>🔍</span> <span id="fullscreenBtnText">点击全屏横屏</span>
+            </button>
+            <div class="orientation-hint" id="orientationHint">或者将手机横向摆放</div>
+        </div>
+    </div>
 
     <!-- 右键菜单 -->
     <div class="context-menu" id="contextMenu">
