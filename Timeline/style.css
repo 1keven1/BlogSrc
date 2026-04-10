@@ -159,6 +159,7 @@ body {
     display: flex;
     height: calc(var(--vh, 100vh) - var(--header-height));
     overflow: hidden;
+    position: relative;
 }
 
 /* 侧边栏 - 时间轴列表 */
@@ -169,12 +170,29 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
-    transition: width var(--sidebar-animation-duration) ease;
     flex-shrink: 0;
+    overflow: hidden;
+    transition: width var(--sidebar-animation-duration) ease;
 }
 
 .sidebar.collapsed {
     width: 0;
+    border-right: none;
+}
+
+.sidebar-inner {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    transform: translateX(0);
+    transition: transform var(--sidebar-animation-duration) ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.sidebar.collapsed .sidebar-inner {
+    transform: translateX(-100%);
 }
 
 .sidebar-toggle {
@@ -215,16 +233,7 @@ body {
     display: inline-block;
 }
 
-.sidebar-header,
-.timeline-list {
-    transition: opacity 0.2s ease;
-}
 
-.sidebar.collapsed .sidebar-header,
-.sidebar.collapsed .timeline-list {
-    opacity: 0;
-    pointer-events: none;
-}
 
 .sidebar-header {
     padding: 20px;
@@ -582,8 +591,15 @@ body {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    height: 4px;
+    height: 7px;
     background: var(--accent-blue);
+    cursor: grab;
+    transition: background-color 0.15s ease;
+}
+
+.range-selection.panning {
+    background: var(--accent-purple);
+    cursor: grabbing;
 }
 
 .range-handle {
@@ -750,6 +766,14 @@ body {
     line-height: 1.8;
     color: var(--text-secondary);
     font-size: 14px;
+}
+
+.detail-text p {
+    margin: 0 0 3px 0; /* 段间距，可调 */
+}
+
+.detail-text p:last-child {
+    margin-bottom: 0; /* 最后一段无下边距 */
 }
 
 .detail-meta {
@@ -1280,7 +1304,7 @@ body {
     .event-label {
         font-size: 11px;
         padding: 3px 2px;
-        max-height: 120px;
+        max-height: 100px;
         letter-spacing: normal;
     }
     
@@ -1351,6 +1375,11 @@ body {
     .btn, .timeline-item, .range-handle, .category-tag, .detail-close, .modal-close {
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* 移动端取消按钮悬浮位移效果 */
+    .btn:hover, .btn:active {
+        transform: none;
     }
     
     /* 移动端事件卡片触摸反馈 */
