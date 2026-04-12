@@ -1,6 +1,53 @@
 'use strict'
 
-// ============ 常量定义 ============
+// ============ Canvas 颜色配置 - 深色/浅色双主题 ============
+const COLORS = {
+    // 深色模式（紫色主题）
+    dark: {
+        yearScale: {
+            bold: 'hsl(261, 25%, 35%)',       // 粗刻度线：紫灰色
+            normal: 'hsl(261, 25%, 25%)',     // 普通刻度线：深紫灰
+            textMajor: 'hsl(257, 28%, 80%)',  // 重要年份文字：淡紫
+            textMinor: 'hsl(257, 20%, 55%)',  // 普通年份文字：中紫灰
+        },
+        currentYear: 'hsl(48, 100%, 50%)',    // 当前年份高亮
+        event: {
+            centerDot: 'hsl(266, 100%, 97%)', // 事件圆点中心：极淡紫白
+        }
+    },
+    // 浅色模式（白色与浅紫主题）
+    light: {
+        yearScale: {
+            bold: 'hsl(261, 30%, 75%)',       // 粗刻度线：浅紫灰
+            normal: 'hsl(261, 25%, 85%)',     // 普通刻度线：淡紫灰
+            textMajor: 'hsl(257, 25%, 45%)',  // 重要年份文字：中紫
+            textMinor: 'hsl(257, 20%, 65%)',  // 普通年份文字：浅紫灰
+        },
+        currentYear: 'hsl(48, 100%, 45%)',    // 当前年份高亮
+        event: {
+            centerDot: 'hsl(0, 0%, 100%)',    // 事件圆点中心：纯白
+        }
+    }
+};
+
+/**
+ * 获取当前主题颜色
+ * @returns {Object} 当前主题的颜色配置
+ */
+function getThemeColors() {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    return isLight ? COLORS.light : COLORS.dark;
+}
+
+// 刻度样式配置
+const YEARSCALE_BOLD_WIDTH = 1.5;
+const YEARSCALE_BOLD_FONT = 'bold 14px sans-serif';
+const YEARSCALE_WIDTH = 1;
+const YEARSCALE_FONT = '11px sans-serif';
+const CURRENT_YEAR_WIDTH = 2;
+const CURRENT_YEAR_FONT = 'bold 14px sans-serif';
+
+// ============ 其他常量定义 ============
 const MIN_LABEL_SPACING = {
     desktop: 25,  // 电脑端标签间最小像素间距
     mobile: 20,   // 移动端标签间最小像素间距（屏幕较小，用更小值）
@@ -13,15 +60,6 @@ const VIEWPORT_MARGIN = 0.07; // 视口边缘的额外年份范围（占留白�
 const DRAG_THRESHOLD = 3; // 移动超过3px视为拖拽
 const TIMELINE_WIDTH = 4; // 时间轴线条宽度
 const MIN_YEAR_SPAN = 3; // 最小视图跨度（年），避免过度放大
-const YEARSCALE_BOLD_COLOR = '#46566b';
-const YEARSCALE_BOLD_WIDTH = 1.5;
-const YEARSCALE_BOLD_FONT = 'bold 14px sans-serif';
-const YEARSCALE_COLOR = '#334155';
-const YEARSCALE_WIDTH = 1;
-const YEARSCALE_FONT = '11px sans-serif';
-const CURRENT_YEAR_COLOR = '#facc15';
-const CURRENT_YEAR_WIDTH = 2;
-const CURRENT_YEAR_FONT = 'bold 14px sans-serif';
 
 // ============ 工具函数 ============
 /**
@@ -907,7 +945,7 @@ class TimelineApp {
             ctx.fill();
             ctx.beginPath();
             ctx.arc(x, centerY, 3, 0, Math.PI * 2);
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = getThemeColors().event.centerDot;
             ctx.fill();
         });
     }
@@ -942,7 +980,7 @@ class TimelineApp {
             const isMajor = Math.round(t) % majorStep === 0;
 
             // 刻度线
-            ctx.strokeStyle = isMajor ? YEARSCALE_BOLD_COLOR : YEARSCALE_COLOR;
+            ctx.strokeStyle = isMajor ? getThemeColors().yearScale.bold : getThemeColors().yearScale.normal;
             ctx.lineWidth = isMajor ? YEARSCALE_BOLD_WIDTH : YEARSCALE_WIDTH;
             ctx.beginPath();
             ctx.moveTo(x, 0);
@@ -950,7 +988,7 @@ class TimelineApp {
             ctx.stroke();
 
             // 年份标签
-            ctx.fillStyle = isMajor ? '#94a3b8' : '#64748b';
+            ctx.fillStyle = isMajor ? getThemeColors().yearScale.textMajor : getThemeColors().yearScale.textMinor;
             ctx.font = isMajor ? YEARSCALE_BOLD_FONT : YEARSCALE_FONT;
             ctx.textAlign = 'center';
             // 小数部分转换为月份显示
@@ -975,7 +1013,7 @@ class TimelineApp {
                 const x = ((currentDecimalYear - this.viewStart) / timeSpan) * width;
 
                 // 刻度线
-                ctx.strokeStyle = CURRENT_YEAR_COLOR;
+                ctx.strokeStyle = getThemeColors().currentYear;
                 ctx.lineWidth = CURRENT_YEAR_WIDTH;
                 ctx.beginPath();
                 ctx.moveTo(x, 0);
@@ -983,7 +1021,7 @@ class TimelineApp {
                 ctx.stroke();
 
                 // 当前年份标签
-                ctx.fillStyle = CURRENT_YEAR_COLOR;
+                ctx.fillStyle = getThemeColors().currentYear;
                 ctx.font = CURRENT_YEAR_FONT;
                 ctx.textAlign = 'center';
                 ctx.fillText(this.formatEventDate(currentEvent), x, 35);
