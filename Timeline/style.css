@@ -22,6 +22,7 @@
     --accent-emerald: #10b981;              
     --danger-color: #f43f5e;             
     --warn-color: #fbbf24;                 
+    --handel-color: #ffffff;
     
     /* ---------- 边框与阴影 ---------- */
     --border-color: hsl(261 25% 35% / 1);     
@@ -58,6 +59,7 @@
     --accent-emerald: #059669;
     --danger-color: #e11d48;
     --warn-color: #d97706;
+    --handel-color: #ffffff;
     
     /* ---------- 边框与阴影 ---------- */
     --border-color: hsl(259 35% 70% / 1); 
@@ -654,10 +656,10 @@ body {
     transform: translate(-50%, -50%);
     width: 16px;
     height: 24px;
-    background: var(--text-primary);
+    background: var(--handel-color);
     border-radius: 4px;
     cursor: ew-resize;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     z-index: 10;
     touch-action: none; /* 禁用浏览器默认触摸行为 */
 }
@@ -677,7 +679,7 @@ body {
 
 .range-handle:hover,
 .range-handle:active {
-    background: var(--highlight-color);
+    background: var(--hightlight-hover);
 }
 
 .handle-label {
